@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bubbel.</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#7a9e72" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Bubbel." />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="icon" type="image/x-icon" href="icons/favicon.ico" />
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 380px;
+      padding: 32px 24px;
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .logo-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 18px;
+      margin: 0 auto 16px;
+      display: block;
+    }
+
+    .logo-text {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      color: #1a1a1a;
+    }
+
+    .logo-dot { color: #7a9e72; }
+
+    .logo-sub {
+      font-size: 14px;
+      color: #aaa;
+      margin-top: 4px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 24px;
+      background: #f5f5f5;
+      border-radius: 8px;
+      padding: 3px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #888;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .tab.active {
+      background: #fff;
+      color: #1a1a1a;
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .form-group { margin-bottom: 16px; }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #555;
+      margin-bottom: 6px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.15s;
+      background: #fafafa;
+    }
+
+    input:focus { border-color: #7a9e72; background: #fff; }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      margin-top: 8px;
+    }
+
+    .btn:active { opacity: 0.8; }
+
+    .btn-primary {
+      background: #7a9e72;
+      color: #fff;
+    }
+
+    .btn-primary:disabled {
+      background: #b5ccb0;
+      cursor: not-allowed;
+    }
+
+    .error {
+      background: #fef3f2;
+      border: 1px solid #fecdca;
+      color: #b42318;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+
+    .success {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #166534;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+
+    .forgot {
+      text-align: right;
+      margin-top: 8px;
+    }
+
+    .forgot a {
+      font-size: 13px;
+      color: #7a9e72;
+      text-decoration: none;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid #e8e8e8;
+      border-top-color: #7a9e72;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text { font-size: 14px; color: #888; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="logo">
+    <img src="icons/icon-192.png" alt="Bubbel." class="logo-icon" />
+    <div class="logo-text">Bubbel<span class="logo-dot">.</span></div>
+    <div class="logo-sub">De babytracker voor jouw gezin</div>
+  </div>
+
+  <!-- Loading state -->
+  <div id="loading" class="loading" style="display:none;">
+    <div class="spinner"></div>
+    <div class="loading-text">Inloggen…</div>
+  </div>
+
+  <!-- Login card -->
+  <div id="loginCard" class="card">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('login')">Inloggen</button>
+      <button class="tab" onclick="switchTab('register')">Registreren</button>
+    </div>
+
+    <div id="error" class="error" style="display:none;"></div>
+    <div id="successMsg" class="success" style="display:none;"></div>
+
+    <!-- Login form -->
+    <div id="loginForm">
+      <div class="form-group">
+        <label>E-mailadres</label>
+        <input type="email" id="loginEmail" autocomplete="email" placeholder="naam@voorbeeld.nl" />
+      </div>
+      <div class="form-group">
+        <label>Wachtwoord</label>
+        <input type="password" id="loginPassword" autocomplete="current-password" placeholder="••••••" />
+      </div>
+      <button class="btn btn-primary" onclick="doLogin()">Inloggen</button>
+      <div class="forgot">
+        <a href="#" onclick="showForgot()">Wachtwoord vergeten?</a>
+      </div>
+    </div>
+
+    <!-- Register form -->
+    <div id="registerForm" style="display:none;">
+      <div class="form-group">
+        <label>E-mailadres</label>
+        <input type="email" id="regEmail" autocomplete="email" placeholder="naam@voorbeeld.nl" />
+      </div>
+      <div class="form-group">
+        <label>Wachtwoord (min. 6 tekens)</label>
+        <input type="password" id="regPassword" autocomplete="new-password" placeholder="••••••" />
+      </div>
+      <div class="form-group">
+        <label>Wachtwoord herhalen</label>
+        <input type="password" id="regPassword2" autocomplete="new-password" placeholder="••••••" />
+      </div>
+      <button class="btn btn-primary" onclick="doRegister()">Account aanmaken</button>
+    </div>
+
+    <!-- Forgot password form -->
+    <div id="forgotForm" style="display:none;">
+      <p style="font-size:13px;color:#888;margin-bottom:16px;">Vul je e-mailadres in. Je ontvangt een link om je wachtwoord opnieuw in te stellen.</p>
+      <div class="form-group">
+        <label>E-mailadres</label>
+        <input type="email" id="forgotEmail" autocomplete="email" placeholder="naam@voorbeeld.nl" />
+      </div>
+      <button class="btn btn-primary" onclick="doForgot()">Stuur resetlink</button>
+      <button class="btn" style="background:#f5f5f5;color:#555;margin-top:8px;" onclick="switchTab('login')">← Terug</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ─── CONFIGURATIE ────────────────────────────────────────────────────────────
+  // Vervang deze twee waarden met jouw Supabase gegevens
+  const SUPABASE_URL = 'https://ydwytidpvqnqsasjzdui.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_JyPdaf0YjY7vq_bt8K_zgA_TrATob0I';
+
+  // Vervang dit met de URL van jouw Streamlit app
+  const STREAMLIT_URL = 'https://bubbeltest.streamlit.app';
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  const STORAGE_KEY = 'bubbel_session';
+
+  // Controleer bij laden of er al een sessie is opgeslagen
+  window.addEventListener('load', async () => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const session = JSON.parse(saved);
+        if (session.refresh_token) {
+          showLoading(true);
+          const refreshed = await refreshSession(session.refresh_token);
+          if (refreshed) {
+            saveSession(refreshed);
+            redirectToApp(refreshed.access_token);
+            return;
+          }
+        }
+      } catch (e) {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+      showLoading(false);
+    }
+  });
+
+  async function refreshSession(refreshToken) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function doLogin() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    if (!email || !password) { showError('Vul e-mail en wachtwoord in'); return; }
+
+    showLoading(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showLoading(false);
+        showError(data.error_description || data.msg || 'Inloggen mislukt');
+        return;
+      }
+      saveSession(data);
+      redirectToApp(data.access_token);
+    } catch (e) {
+      showLoading(false);
+      showError('Netwerkfout — probeer het opnieuw');
+    }
+  }
+
+  async function doRegister() {
+    const email = document.getElementById('regEmail').value.trim();
+    const password = document.getElementById('regPassword').value;
+    const password2 = document.getElementById('regPassword2').value;
+    if (!email || !password) { showError('Vul alle velden in'); return; }
+    if (password !== password2) { showError('Wachtwoorden komen niet overeen'); return; }
+    if (password.length < 6) { showError('Wachtwoord moet minimaal 6 tekens zijn'); return; }
+
+    showLoading(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showLoading(false);
+        showError(data.error_description || data.msg || 'Registratie mislukt');
+        return;
+      }
+      // Direct inloggen na registratie
+      saveSession(data);
+      if (data.access_token) {
+        redirectToApp(data.access_token);
+      } else {
+        showLoading(false);
+        showSuccess('Account aangemaakt! Controleer je e-mail om te bevestigen.');
+        switchTab('login');
+      }
+    } catch (e) {
+      showLoading(false);
+      showError('Netwerkfout — probeer het opnieuw');
+    }
+  }
+
+  async function doForgot() {
+    const email = document.getElementById('forgotEmail').value.trim();
+    if (!email) { showError('Vul je e-mailadres in'); return; }
+
+    try {
+      await fetch(`${SUPABASE_URL}/auth/v1/recover`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ email }),
+      });
+      showSuccess('E-mail verstuurd! Controleer je inbox.');
+      switchTab('login');
+    } catch (e) {
+      showError('Netwerkfout — probeer het opnieuw');
+    }
+  }
+
+  function saveSession(data) {
+    if (data.refresh_token) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+      }));
+    }
+  }
+
+  function redirectToApp(accessToken) {
+    // Stuur access token mee naar Streamlit via URL parameter
+    window.location.href = `${STREAMLIT_URL}?pwa_token=${encodeURIComponent(accessToken)}`;
+  }
+
+  function switchTab(tab) {
+    clearMessages();
+    const isLogin = tab === 'login';
+    const isRegister = tab === 'register';
+    document.getElementById('loginForm').style.display = isLogin ? 'block' : 'none';
+    document.getElementById('registerForm').style.display = isRegister ? 'block' : 'none';
+    document.getElementById('forgotForm').style.display = (tab === 'forgot') ? 'block' : 'none';
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      t.classList.toggle('active', (i === 0 && isLogin) || (i === 1 && isRegister));
+    });
+  }
+
+  function showForgot() {
+    clearMessages();
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('forgotForm').style.display = 'block';
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  }
+
+  function showLoading(show) {
+    document.getElementById('loading').style.display = show ? 'block' : 'none';
+    document.getElementById('loginCard').style.display = show ? 'none' : 'block';
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error');
+    el.textContent = msg;
+    el.style.display = 'block';
+    document.getElementById('successMsg').style.display = 'none';
+  }
+
+  function showSuccess(msg) {
+    const el = document.getElementById('successMsg');
+    el.textContent = msg;
+    el.style.display = 'block';
+    document.getElementById('error').style.display = 'none';
+  }
+
+  function clearMessages() {
+    document.getElementById('error').style.display = 'none';
+    document.getElementById('successMsg').style.display = 'none';
+  }
+
+  // Enter key support
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      if (document.getElementById('loginForm').style.display !== 'none') doLogin();
+      else if (document.getElementById('registerForm').style.display !== 'none') doRegister();
+      else if (document.getElementById('forgotForm').style.display !== 'none') doForgot();
+    }
+  });
+</script>
+
+<!-- Service Worker registratie -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+
+</body>
+</html>
